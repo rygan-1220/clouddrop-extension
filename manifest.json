@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "CloudDrop",
+  "version": "1.0",
+  "description": "Cross-device clipboard and file drop",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": ["activeTab"]
+}

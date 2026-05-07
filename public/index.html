@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudDrop Mobile</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <meta name="theme-color" content="#ffffff">
+    <style>
+        :root { --me:#0b93f6; --them:#f0f0f0; --bg:#ffffff; --muted:#666 }
+        body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial; padding: 14px; background:var(--bg); color:#111 }
+        header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px }
+        h2 { margin:0; font-size:18px }
+        #status { font-size:12px; color:var(--muted) }
+
+        #chat { height: 70vh; max-height:520px; overflow-y: auto; border-radius:10px; margin-bottom: 10px; padding: 12px; display:flex; flex-direction:column; gap:8px; background:#fbfbfb; box-shadow:0 1px 0 rgba(0,0,0,0.03) }
+
+        .msg-row { display:flex; }
+        .message { max-width:78%; padding:10px 12px; border-radius:14px; word-break:break-word; box-shadow:0 1px 0 rgba(0,0,0,0.02) }
+        .message.me { margin-left:auto; background:var(--me); color:white; border-bottom-right-radius:6px }
+        .message.them { margin-right:auto; background:var(--them); color:#111; border-bottom-left-radius:6px }
+        .meta { font-size:11px; color:var(--muted); margin-bottom:6px }
+        .copy-btn { margin-left:8px; background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:12px }
+        .file-link { color:#0b66d0; text-decoration:none; font-weight:500 }
+
+        form.controls { display:flex; gap:8px; align-items:center }
+        input[type=text] { flex:1; padding:10px; border-radius:8px; border:1px solid #e3e3e3 }
+        button, input[type=file] { padding:10px 12px; border-radius:8px; border: none; background:#f3f3f3; cursor:pointer }
+        button.primary { background:var(--me); color:white }
+    </style>
+</head>
+<body>
+    <header>
+        <h2>CloudDrop</h2>
+        <div id="status">Connecting...</div>
+    </header>
+
+    <div id="chat" aria-live="polite"></div>
+
+    <form class="controls" id="controls" onsubmit="return false">
+        <input type="text" id="textInput" placeholder="Type message...">
+        <input type="file" id="fileInput" aria-label="Send file">
+        <button id="sendBtn" class="primary">Send</button>
+    </form>
+
+    <script>
+        const socket = io();
+
+        // Extract room ID from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        let roomId = urlParams.get('room');
+
+        const statusEl = document.getElementById('status');
+        const chatEl = document.getElementById('chat');
+
+        if (!roomId) {
+            statusEl.textContent = 'No room. Scan the QR code from the extension.';
+            document.getElementById('controls').querySelectorAll('input,button').forEach(el => el.disabled = true);
+        } else {
+            socket.emit('join-room', roomId);
+            statusEl.textContent = `Room: ${roomId}`;
+        }
+
+        // Helper to add messages
+        function addMessage(side, content, opts = {}){
+            const row = document.createElement('div');
+            row.className = 'msg-row';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'message ' + (side === 'me' ? 'me' : 'them');
+
+            if (opts.meta){
+                const m = document.createElement('div');
+                m.className = 'meta';
+                m.textContent = opts.meta;
+                wrapper.appendChild(m);
+            }
+
+            if (opts.file){
+                // If it's an image, preview
+                if (opts.type && opts.type.startsWith('image/')){
+                    const img = document.createElement('img');
+                    img.src = opts.file;
+                    img.style.maxWidth = '200px';
+                    img.style.borderRadius = '8px';
+                    wrapper.appendChild(img);
+                } else {
+                    const a = document.createElement('a');
+                    a.href = opts.file;
+                    a.download = opts.name || 'file';
+                    a.className = 'file-link';
+                    a.textContent = opts.name || 'Download file';
+                    wrapper.appendChild(a);
+                }
+            } else {
+                const t = document.createElement('div');
+                t.textContent = content;
+                wrapper.appendChild(t);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.innerText = 'Copy';
+                copyBtn.addEventListener('click', async () => {
+                    try { await navigator.clipboard.writeText(content); copyBtn.innerText = 'Copied'; setTimeout(()=>copyBtn.innerText='Copy',900); } catch(e){ console.error(e) }
+                });
+                wrapper.appendChild(copyBtn);
+            }
+
+            row.appendChild(wrapper);
+            chatEl.appendChild(row);
+            chatEl.scrollTop = chatEl.scrollHeight;
+        }
+
+        // Server events
+        socket.on('receive-text', (text) => addMessage('them', text, { meta: 'PC' }));
+        socket.on('receive-file', (data) => addMessage('them', '', { file: data.file, name: data.name, type: data.type, meta: 'PC' }));
+        socket.on('session-destroyed', (id) => {
+            if (id === roomId) {
+                statusEl.textContent = 'Session ended by host';
+                document.getElementById('controls').querySelectorAll('input,button').forEach(el => el.disabled = true);
+            }
+        });
+
+        // Send text
+        document.getElementById('sendBtn').addEventListener('click', () => {
+            const text = document.getElementById('textInput').value.trim();
+            if (!text) return;
+            socket.emit('send-text', { room: roomId, text: text });
+            addMessage('me', text, { meta: 'Me' });
+            document.getElementById('textInput').value = '';
+        });
+
+        // Send file
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                socket.emit('send-file', { room: roomId, name: file.name, type: file.type, file: event.target.result });
+                addMessage('me', '', { file: event.target.result, name: file.name, type: file.type, meta: 'Me' });
+            };
+            reader.readAsDataURL(file);
+            // reset input for next selection
+            e.target.value = '';
+        });
+
+        // Make Enter key send message
+        document.getElementById('textInput').addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('sendBtn').click(); } });
+    </script>
+</body>
+</html>
