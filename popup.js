@@ -17,8 +17,13 @@ socket.emit('join-room', roomId);
 // Tell server to persist or refresh the session record
 socket.emit('create-session', roomId);
 
+// Page switching functions
+function showPage(pageName) {
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+    document.getElementById(pageName).classList.add('active');
+}
+
 // Generate QR Code pointing to your mobile web app
-// Render QR Code (clears previous rendering to avoid appending)
 function renderQRCode() {
     const qEl = document.getElementById('qrcode');
     qEl.innerHTML = '';
@@ -35,8 +40,19 @@ function updateStatus() {
     const statusEl = document.getElementById('status');
     statusEl.innerHTML = `Session: <b>${roomId}</b> - ${isNewSession ? 'New' : 'Active'}`;
 }
+
+// Initial render
 renderQRCode();
 updateStatus();
+
+// Page navigation
+document.getElementById('openChatBtn').addEventListener('click', () => {
+    showPage('chatPage');
+});
+
+document.getElementById('showQrBtn').addEventListener('click', () => {
+    showPage('qrPage');
+});
 
 // Handle incoming text
 // Render a message (text or file) into chat as conversation bubble
@@ -44,7 +60,7 @@ function addMessage(side, content, opts = {}) {
     // side: 'me' or 'them'
     const chat = document.getElementById('chat');
     const row = document.createElement('div');
-    row.className = 'msg-row';
+    row.className = `msg-row ${side === 'me' ? 'me' : 'them'}`;
 
     const wrapper = document.createElement('div');
     wrapper.className = `message ${side === 'me' ? 'me' : 'them'}`;
@@ -56,17 +72,20 @@ function addMessage(side, content, opts = {}) {
         wrapper.appendChild(meta);
     }
 
+    const msgContent = document.createElement('div');
+    msgContent.className = 'msg-content';
+
     if (opts.file) {
         const a = document.createElement('a');
         a.href = opts.file;
         a.download = opts.name || 'file';
         a.className = 'file-link';
         a.textContent = opts.name || 'Download file';
-        wrapper.appendChild(a);
+        msgContent.appendChild(a);
     } else {
         const textNode = document.createElement('div');
         textNode.textContent = content;
-        wrapper.appendChild(textNode);
+        msgContent.appendChild(textNode);
 
         // add copy button
         const copyBtn = document.createElement('button');
@@ -82,9 +101,10 @@ function addMessage(side, content, opts = {}) {
                 console.error('Copy failed', e);
             }
         });
-        wrapper.appendChild(copyBtn);
+        msgContent.appendChild(copyBtn);
     }
 
+    wrapper.appendChild(msgContent);
     row.appendChild(wrapper);
     chat.appendChild(row);
     // scroll to bottom
@@ -144,5 +164,6 @@ document.getElementById('endSessionBtn').addEventListener('click', () => {
         socket.emit('create-session', roomId);
         renderQRCode();
         updateStatus();
-    }, 1000);
+        showPage('qrPage');
+    }, 800);
 });

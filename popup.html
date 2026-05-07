@@ -1,41 +1,320 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <style>
-        body { width: 320px; padding: 12px; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial; color:#222 }
-        #chat { height: 220px; overflow-y: auto; border: 1px solid #e3e3e3; margin-bottom: 10px; padding: 8px; display:flex; flex-direction:column; gap:6px; background:#fafafa }
-        .controls { display: flex; gap: 6px; flex-direction: column; }
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --primary-light: #dbeafe;
+            --bg: #ffffff;
+            --surface: #f8fafc;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981
+        }
 
-        /* Conversation bubbles */
-        .message { max-width: 78%; padding:8px 10px; border-radius:12px; position:relative; display:inline-block; box-shadow: 0 1px 0 rgba(0,0,0,0.03); word-break:break-word }
-        .message.me { margin-left: auto; background: #0b93f6; color: white; border-bottom-right-radius:4px }
-        .message.them { margin-right: auto; background: #f0f0f0; color: #111; border-bottom-left-radius:4px }
-        .meta { font-size:11px; color:#666; margin-bottom:4px }
-        .msg-row { display:flex; align-items:flex-end }
-        .copy-btn { margin-left:8px; background:transparent;border:none;color:#666;cursor:pointer;font-size:12px }
+        body {
+            width: 360px;
+            box-sizing: border-box;
+            padding: 16px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            margin: 0
+        }
 
-        /* File link styling */
-        .file-link { color:#0b66d0; text-decoration:none; font-weight:500 }
+        h3 {
+            margin: 0 0 12px 0;
+            font-size: 20px;
+            font-weight: 700
+        }
+
+        /* Page management */
+        .page { display: none }
+        .page.active { display: flex }
+
+        /* QR Page */
+        #qrPage {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            min-height: 350px
+        }
+
+        #qrcode {
+            text-align: center
+        }
+
+        #openChatBtn {
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s
+        }
+
+        #openChatBtn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3)
+        }
+
+        /* Chat Page */
+        #chatPage {
+            flex-direction: column;
+            gap: 12px;
+            min-height: 400px;
+            width: 100%
+        }
+
+        /* Status + Button Row */
+        .status-row {
+            display: grid;
+            grid-template-columns: minmax(0, 4fr) minmax(0, 1fr);
+            gap: 8px;
+            align-items: center;
+            width: 100%
+        }
+
+        #status {
+            font-size: 12px;
+            color: var(--muted);
+            padding: 8px 12px;
+            background: var(--surface);
+            border-left: 3px solid var(--primary);
+            margin: 0;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap
+        }
+
+        #showQrBtn {
+            width: 100%;
+            padding: 8px 6px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text);
+            white-space: nowrap
+        }
+
+        #showQrBtn:hover {
+            border-color: var(--primary);
+            color: var(--primary)
+        }
+
+        #chatContainer {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px
+        }
+
+        #chat {
+            height: 280px;
+            overflow-y: auto;
+            margin-bottom: 12px;
+            padding: 12px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            flex-direction: column
+        }
+
+        /* Conversation cards */
+        .msg-row {
+            display: flex;
+            width: 100%;
+            margin-bottom: 2px
+        }
+
+        .msg-row.me {
+            justify-content: flex-end
+        }
+
+        .msg-row.them {
+            justify-content: flex-start
+        }
+
+        .message {
+            width: 82%;
+            padding: 11px 14px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+            word-break: break-word;
+            display: flex;
+            flex-direction: column;
+            gap: 6px
+        }
+
+        .message.me {
+            background: var(--primary);
+            color: white
+        }
+
+        .message.them {
+            background: white;
+            color: var(--text);
+            border: 1px solid var(--border)
+        }
+
+        .msg-content {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .meta {
+            font-size: 11px;
+            color: var(--muted)
+        }
+
+        .message.me .meta {
+            color: rgba(255, 255, 255, 0.8)
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            font-size: 11px;
+            padding: 4px 8px;
+            opacity: 0.7;
+            transition: opacity 0.2s
+        }
+
+        .copy-btn:hover {
+            opacity: 1;
+            background: rgba(0, 0, 0, 0.05)
+        }
+
+        .message.me .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2)
+        }
+
+        .file-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            word-break: break-all
+        }
+
+        .file-link:hover {
+            text-decoration: underline
+        }
+
+        /* Inputs and buttons */
+        input[type=text],
+        input[type=file] {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            font-size: 14px;
+            font-family: inherit;
+            background: white;
+            color: var(--text)
+        }
+
+        input[type=text]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light)
+        }
+
+        input[type=file] {
+            cursor: pointer;
+            padding: 8px 12px
+        }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit
+        }
+
+        #sendBtn {
+            background: var(--primary);
+            color: white
+        }
+
+        #sendBtn:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3)
+        }
+
+        #sendBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed
+        }
+
+        #endSessionBtn {
+            background: #ef4444;
+            color: white;
+        }
+
+        #endSessionBtn:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3)
+        }
     </style>
 </head>
+
 <body>
     <h3>CloudDrop</h3>
-    <div id="qrcode"></div> <!-- QR Code goes here -->
 
-    <div id="status" style="margin-top:8px; font-size:13px; color:#333"></div>
-
-    <div id="chat"></div>
-
-    <div class="controls">
-        <input type="text" id="textInput" placeholder="Type a message...">
-        <button id="sendBtn">Send Text</button>
-        <input type="file" id="fileInput">
-        <button id="endSessionBtn" style="background:#e74c3c;color:white;border:none;padding:6px;cursor:pointer">End Session</button>
+    <!-- QR Page -->
+    <div id="qrPage" class="page active">
+        <div id="qrcode"></div>
+        <button id="openChatBtn">Open Chat</button>
     </div>
 
-    <!-- Ensure these files are downloaded to your extension folder -->
+    <!-- Chat Page -->
+    <div id="chatPage" class="page">
+        <!-- Status + Button Row (80/20) -->
+        <div class="status-row">
+            <div id="status"></div>
+            <button id="showQrBtn">Show QR</button>
+        </div>
+
+        <!-- Chat Container (100%) -->
+        <div id="chatContainer">
+            <div id="chat"></div>
+            <div class="controls">
+                <input type="text" id="textInput" placeholder="Type a message...">
+                <button id="sendBtn">Send Text</button>
+                <input type="file" id="fileInput">
+                <button id="endSessionBtn">End Session</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="socket.io.min.js"></script>
     <script src="qrcode.min.js"></script>
     <script src="popup.js"></script>
 </body>
+
 </html>
+
