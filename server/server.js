@@ -39,13 +39,13 @@ io.on('connection', (socket) => {
 
     // Relay text messages
     socket.on('send-text', (data) => {
-        logTransfer('send-text', { room: data.room, length: data.text?.length || 0 });
+        logTransfer('send-text', { room: data.room, length: (data.text && data.text.length) || 0 });
         socket.to(data.room).emit('receive-text', data.text);
     });
 
     // Relay files (Sent as Base64 for simplicity in this MVP)
     socket.on('send-file', (data) => {
-        logTransfer('send-file', { room: data.room, name: data.name, type: data.type, size: data.file?.length || 0 });
+        logTransfer('send-file', { room: data.room, name: data.name, type: data.type, size: (data.file && data.file.length) || 0 });
         socket.to(data.room).emit('receive-file', {
             name: data.name,
             file: data.file,
