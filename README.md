@@ -1,102 +1,167 @@
 # CloudDrop
 
-CloudDrop is split into two separate parts:
+A real-time peer-to-peer file and text transfer system using WebRTC with a browser extension and mobile web interface.
 
-1. A Node.js server that only handles signaling and serves the mobile page.
-2. A browser extension that creates the room, shows the QR code, and sends data peer to peer.
+## 🎯 Project Overview
+
+CloudDrop enables seamless data transfer between desktop and mobile devices without routing files through a server. It uses:
+
+- **Browser Extension**: Creates rooms, generates QR codes, and manages peer connections
+- **Signaling Server**: Relays only WebRTC signaling events via Socket.IO
+- **WebRTC Data Channels**: Direct peer-to-peer communication for file transfer
 
 The server is no longer in the file-transfer path. Files move directly between the extension popup and the mobile browser using WebRTC data channels.
 
-## What Runs Where
+## 🛠️ Technology Stack
 
-### Server side: `server/`
+### Frontend
 
-Run this on your VPS or on your local machine during development.
+- **Browser Extension**: HTML5, JavaScript (vanilla)
+- **Mobile Web**: HTML5, JavaScript
+- **QR Code Generation**: qrcode.min.js
 
-Key files:
+### Backend
 
-- `server/server.js`
-- `server/package.json`
-- `server/public/index.html`
-- `server/public/client.js`
+- **Node.js** - Signaling server runtime
+- **Socket.IO** - WebRTC signaling relay and room management
 
-What it does:
+### P2P Communication
 
-- Serves the mobile web app
-- Hosts Socket.IO
-- Relays only WebRTC signaling events like `send-signal` and `receive-signal`
-- Tracks room join/leave state
+- **WebRTC** - Peer-to-peer data channels
+- **SimplePeer** - WebRTC abstraction library
 
-### Extension side: `extension/`
+## 📁 Project Structure
 
-Load this folder unpacked in Chrome or Chromium.
+```
+clouddrop-server/
+├── README.md                       # Project documentation
+├── server/                         # Node.js signaling server
+│   ├── package.json                # Dependencies
+│   ├── server.js                   # Main server entry point
+│   └── public/                     # Mobile web app
+│       ├── index.html              # Mobile app interface
+│       ├── client.js               # Mobile client logic
+│       └── simplepeer.min.js       # WebRTC library
+└── extension/                      # Browser extension (Chrome/Chromium)
+    ├── manifest.json               # Extension manifest
+    ├── config.js                   # Server configuration
+    ├── popup.html                  # Extension popup UI
+    ├── popup.js                    # Popup logic & QR generation
+    ├── qrcode.min.js               # QR code library
+    ├── simplepeer.min.js           # WebRTC library
+    └── socket.io.min.js            # Socket.IO client
+```
 
-Key files:
+## 🚀 Setup Instructions
 
-- `extension/manifest.json`
-- `extension/config.js`
-- `extension/popup.html`
-- `extension/popup.js`
-- `extension/simplepeer.min.js`
-- `extension/socket.io.min.js`
-- `extension/qrcode.min.js`
+### ⚡ Quick Start (5 Minutes)
 
-What it does:
-
-- Opens the CloudDrop popup
-- Creates or restores a room id
-- Generates the QR code for the mobile device
-- Sends text and file chunks directly over WebRTC
-
-## How It Works
-
-1. You open the extension popup.
-2. The popup joins a room on the signaling server.
-3. The popup shows a QR code for the mobile page URL.
-4. The phone scans the QR code and opens `server/public/index.html` with the same room id.
-5. The server relays WebRTC signals until the two browsers connect.
-6. After the peer connection is established, text and files go directly over the data channel.
-
-File transfer details:
-
-- Files are read with `FileReader` as `ArrayBuffer`
-- Data is split into 32 KB chunks
-- Each chunk is sent as base64 data over the peer connection
-- The receiver acknowledges each chunk
-- An EOF message marks the end of the file
-- The receiver reassembles the chunks into a `Blob` and downloads it locally
-
-## How To Run It
-
-### 1. Install server dependencies
+#### 1. Install Server Dependencies
 
 ```bash
 cd server
 npm install
 ```
 
-### 2. Start the signaling server
+#### 2. Configure Server URL
+
+Edit `extension/config.js` and set the server URL:
+
+```js
+window.CLOUDDROP_SERVER_URL = 'https://your-domain.example';
+```
+
+For local development, use ngrok or similar:
+
+```js
+window.CLOUDDROP_SERVER_URL = 'https://your-tunnel.ngrok.io';
+```
+
+#### 3. Start the Signaling Server
 
 ```bash
 cd server
 node server.js
 ```
 
-By default the server listens on the port defined in `server.js`.
+The server listens on the port defined in `server.js`.
 
-### 3. Point the extension at the server
+#### 4. Load the Extension
 
-The extension reads the server URL from `window.CLOUDDROP_SERVER_URL` in `extension/config.js`.
+- Open Chrome/Chromium
+- Go to `chrome://extensions/`
+- Enable "Developer mode"
+- Click "Load unpacked"
+- Select the `extension/` folder
 
-For local development, set it to your local server or an HTTPS tunnel such as ngrok:
+#### 5. Access the Application
 
-```js
-window.CLOUDDROP_SERVER_URL = 'https://your-tunnel-or-domain.example';
-```
+- Click the CloudDrop extension icon
+- Scan the QR code with your mobile device
+- Start transferring files
 
-If you use a VPS, set it to your public HTTPS domain.
+## 🔄 How It Works
 
-### 4. Load the extension
+### Step-by-Step Flow
+
+1. **Open Extension**: Click the CloudDrop icon to open the popup
+2. **Create/Join Room**: The popup connects to the signaling server and joins a room
+3. **Generate QR Code**: A QR code displays the mobile access URL with the room ID
+4. **Scan & Connect**: Mobile device scans the QR code and opens the same room
+5. **Establish P2P Connection**: Server relays WebRTC signaling until peers connect
+6. **Direct Transfer**: Files and text go directly over WebRTC data channels
+
+### File Transfer Protocol
+
+- Files are read as `ArrayBuffer` using `FileReader` API
+- Data is split into **32 KB chunks**
+- Each chunk is sent as base64 over the peer connection
+- Receiver acknowledges each chunk
+- **EOF message** marks the end of transmission
+- Receiver reassembles chunks into a `Blob` and downloads locally
+
+### Server Responsibilities
+
+- **Serves** the mobile web app (`server/public/index.html`)
+- **Hosts** Socket.IO for signaling
+- **Relays** WebRTC events: `send-signal` and `receive-signal`
+- **Tracks** room join/leave state
+- **Manages** peer discovery (NOT file transfer)
+
+## 🎨 Features
+
+### Extension Popup
+- ✅ Create or restore room IDs
+- ✅ Generate QR codes for mobile access
+- ✅ Real-time file transfer
+- ✅ Text sharing capability
+- ✅ Connection status display
+
+### Mobile Web App
+- ✅ Scan QR code to join room
+- ✅ Receive files directly
+- ✅ Receive text messages
+- ✅ Download transferred files
+- ✅ Connection status indicator
+
+## 🔐 Architecture Highlights
+
+- **No Server File Storage**: Files never touch the server
+- **Direct P2P Connection**: Low latency, high privacy
+- **WebRTC Signaling Only**: Server overhead is minimal
+- **Cross-Device**: Works between desktop extension and any mobile browser
+- **Room-Based Pairing**: Simple QR code scanning for connection
+
+## 📚 Key Technologies
+
+- **WebRTC**: For encrypted peer-to-peer communication
+- **Socket.IO**: For reliable signaling channel
+- **Browser Extension API**: For desktop integration
+- **QR Codes**: For easy mobile pairing
+
+## 📄 License
+
+This project is created for educational and personal use purposes.
 
 1. Open `chrome://extensions`
 2. Turn on Developer mode
@@ -123,27 +188,6 @@ This is the intended production setup.
 - WebRTC uses Google STUN servers for NAT traversal. For stricter networks, add a TURN server.
 - `server/public/index.html` is only the mobile client entry point. It does not handle file relay anymore.
 
-## Folder Layout
-
-```text
-clouddrop-server/
-  extension/
-    config.js
-    manifest.json
-    popup.html
-    popup.js
-    qrcode.min.js
-    simplepeer.min.js
-    socket.io.min.js
-  server/
-    package.json
-    package-lock.json
-    server.js
-    public/
-      client.js
-      index.html
-      simplepeer.min.js
-```
 
 ## Quick Summary
 
