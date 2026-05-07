@@ -1,5 +1,17 @@
 const SERVER_URL = window.CLOUDDROP_SERVER_URL || '';
-const socket = SERVER_URL ? io(SERVER_URL) : io();
+const socket = SERVER_URL ? io(SERVER_URL, {
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    reconnectionAttempts: Infinity,
+    transports: ['websocket', 'polling']
+}) : io({
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    reconnectionAttempts: Infinity,
+    transports: ['websocket', 'polling']
+});
 const isHost = Boolean(document.getElementById('qrcode'));
 const remoteLabel = isHost ? 'Phone' : 'PC';
 const localLabel = 'Me';

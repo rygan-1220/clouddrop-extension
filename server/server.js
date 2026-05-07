@@ -2,7 +2,11 @@ const express = require('express');
 const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server, {
-    cors: { origin: "*" }
+    cors: { origin: "*" },
+    pingInterval: 30000,      // Send ping every 30 seconds
+    pingTimeout: 60000,       // Wait 60 seconds for pong before timeout
+    transports: ['websocket', 'polling'],
+    allowUpgrades: true
 });
 
 app.use(express.static('public'));
