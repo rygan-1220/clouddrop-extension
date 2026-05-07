@@ -97,6 +97,10 @@ function base64ToUint8Array(base64) {
     return bytes;
 }
 
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
 function showPage(pageName) {
     document.querySelectorAll('.page').forEach((page) => page.classList.remove('active'));
     const target = document.getElementById(pageName);
@@ -342,6 +346,11 @@ function finalizeProgressMessage(transferId, fileName, fileUrl, metaLabel) {
 }
 
 function triggerBrowserDownload(fileUrl, fileName) {
+    // Skip auto-download on mobile devices; let users click the link in conversation
+    if (isMobileDevice()) {
+        return;
+    }
+    
     const anchor = document.createElement('a');
     anchor.href = fileUrl;
     anchor.download = fileName;
