@@ -22,7 +22,12 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
             color: var(--text);
             background: var(--bg);
-            margin: 0
+            margin: 0;
+            height: 560px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 12px
         }
 
         h3 {
@@ -32,7 +37,12 @@
         }
 
         /* Page management */
-        .page { display: none }
+        .page {
+            display: none;
+            flex: 1;
+            min-height: 0
+        }
+
         .page.active { display: flex }
 
         /* QR Page */
@@ -41,7 +51,7 @@
             align-items: center;
             justify-content: center;
             gap: 24px;
-            min-height: 350px
+            min-height: 0
         }
 
         #qrcode {
@@ -69,7 +79,7 @@
         #chatPage {
             flex-direction: column;
             gap: 12px;
-            min-height: 400px;
+            min-height: 0;
             width: 100%
         }
 
@@ -117,25 +127,28 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 12px
+            gap: 12px;
+            min-height: 0
         }
 
         #chat {
-            height: 280px;
+            flex: 1;
+            min-height: 0;
             overflow-y: auto;
-            margin-bottom: 12px;
+            margin-bottom: 0;
             padding: 12px 8px;
             display: flex;
             flex-direction: column;
             gap: 8px;
             background: var(--surface);
-            border: 1px solid var(--border);
+            border: 1px solid var(--border)
         }
 
         .controls {
             display: flex;
             gap: 8px;
-            flex-direction: column
+            flex-direction: column;
+            flex: 0 0 auto
         }
 
         /* Conversation cards */
