@@ -176,6 +176,54 @@
             gap: 6px
         }
 
+        .progress-body {
+            font-size: 13px;
+            line-height: 1.4
+        }
+
+        .progress-status {
+            font-size: 11px;
+            color: var(--muted)
+        }
+
+        .progress-bar-outer {
+            width: 100%;
+            height: 8px;
+            background: rgba(15, 23, 42, 0.08);
+            overflow: hidden
+        }
+
+        .progress-bar-inner {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.15s linear
+        }
+
+        .progress-pct {
+            font-size: 11px;
+            color: var(--muted)
+        }
+
+        .progress-actions {
+            display: flex;
+            justify-content: flex-end
+        }
+
+        .progress-cancel-btn {
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--text);
+            padding: 6px 10px;
+            font-size: 11px;
+            cursor: pointer
+        }
+
+        .progress-cancel-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary)
+        }
+
         .message.me {
             background: var(--primary);
             color: white

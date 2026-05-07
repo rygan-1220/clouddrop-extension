@@ -83,6 +83,12 @@ io.on('connection', (socket) => {
         socket.to(data.room).emit('file-error', data);
     });
 
+    // Chunked transfer protocol: user-cancelled transfer
+    socket.on('file-cancel', (data) => {
+        logTransfer('file-cancel', { room: data.room, transferId: data.transferId, reason: data.reason });
+        socket.to(data.room).emit('file-cancel', data);
+    });
+
     socket.on('disconnect', (reason) => {
         logTransfer('disconnect', { reason });
     });
