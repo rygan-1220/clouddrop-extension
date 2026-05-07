@@ -8,6 +8,7 @@ const io = require('socket.io')(server, {
 
 // Serve the mobile web app (Part 3) from a 'public' folder
 app.use(express.static('public'));
+app.set('trust proxy', 1);
 
 io.on('connection', (socket) => {
     console.log('A device connected:', socket.id);
