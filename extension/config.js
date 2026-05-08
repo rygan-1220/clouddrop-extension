@@ -1,2 +1,2 @@
-// window.CLOUDDROP_SERVER_URL = 'https://7dce-180-75-237-42.ngrok-free.app';
-window.CLOUDDROP_SERVER_URL = 'https://clouddrop.revpov.com';
+// window.CLOUDDROP_SERVER_URL = 'https://your-tunnel.ngrok.io';
+window.CLOUDDROP_SERVER_URL = 'https://your-domain.example';
